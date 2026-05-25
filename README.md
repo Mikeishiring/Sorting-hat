@@ -2,9 +2,9 @@
 
 Public demo: https://sorting-hat-ak1.pages.dev/
 
-This repo is only for the Sorting Hat routing-mark prototypes. Sorting Hat is a separate project from onboarding. The root route is the click-drag routing instrument: a participant holds the center, drags through a small set of passes, and produces a compact routing mark that can describe current state, contribution shape, and preferred interaction style.
+This repo is only for the Sorting Hat routing-mark prototypes. Sorting Hat is a separate project from onboarding. The root route is the layered mark composer; the click-drag routing instrument remains available at `/gesture.html`.
 
-The mark composer experiment is preserved at `/mark-composer.html` for comparison. Onboarding and the reusable radial-control grammar do not live here.
+The mark composer/routing-mark lineage is Sorting Hat `0.5` context. Onboarding and the reusable radial-control grammar do not live here.
 
 ## Run
 
@@ -14,7 +14,7 @@ npm start
 
 Then open `http://localhost:4173`.
 
-Root and `http://localhost:4173/gesture.html` load the Sorting Hat routing instrument. Use `http://localhost:4173/mark-composer.html` for the mark composer experiment.
+Root and `http://localhost:4173/mark-composer.html` load the layered Sorting Hat mark composer. Use `http://localhost:4173/gesture.html` for the click-drag routing instrument.
 
 ## Verify
 
@@ -22,7 +22,7 @@ Root and `http://localhost:4173/gesture.html` load the Sorting Hat routing instr
 npm run verify
 ```
 
-This drives the root routing instrument in headless Edge and checks that it produces a Sorting Hat routing mark payload.
+This drives the click-drag routing instrument and the root mark composer in headless Edge, then checks that both produce Sorting Hat routing-mark payloads.
 
 ## Deploy
 
@@ -34,7 +34,9 @@ This project deploys only to the Cloudflare Pages project `sorting-hat`, which s
 
 ## Project Boundary
 
-- `Radial-controls` is Onboarding V1, the radial-controls onboarding prototype.
-- `Shape-onboarding` is Onboarding V2, the current hidden-shape onboarding flow.
-- `Sorting-hat` is the GitHub and Cloudflare project for cohort routing-mark identity, not an onboarding version.
+- `Sorting-hat`: cohort routing-mark identity. GitHub: `Mikeishiring/Sorting-hat`. Cloudflare Pages: `sorting-hat` / `https://sorting-hat-ak1.pages.dev/`.
+- `Shape-onboarding`: Onboarding V2, the hidden-shape profile onboarding flow. GitHub: `Mikeishiring/Shape-onboarding`. Cloudflare Pages: `shape-onboarding` / `https://shape-onboarding.pages.dev/`.
+- `Radial-controls`: Onboarding V1, the radial-controls onboarding prototype. GitHub: `Mikeishiring/Radial-controls`. Cloudflare Pages: `radial-controls` / `https://radial-controls.pages.dev/`.
 - Do not add onboarding questions, profile PR export code, or raw control grammar demos to this repo unless the product direction changes intentionally.
+
+Related origin note: `radial-dial` is a reusable React marking-menu/radial-dials component, not one of the three deployed products above.

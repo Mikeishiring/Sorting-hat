@@ -76,7 +76,7 @@ async function main() {
     const version = await waitForCdp();
     cdp = await connect(version.webSocketDebuggerUrl);
     const target = await cdp.send("Target.createTarget", {
-      url: `http://localhost:${appPort}/`,
+      url: `http://localhost:${appPort}/gesture.html`,
     });
     const attached = await cdp.send("Target.attachToTarget", {
       targetId: target.targetId,
@@ -141,7 +141,7 @@ async function main() {
     fs.writeFileSync("prototype-sorting-hat.png", Buffer.from(shot.data, "base64"));
 
     await cdp.send("Page.navigate", {
-      url: `http://localhost:${appPort}/mark-composer.html`,
+      url: `http://localhost:${appPort}/`,
     }, sessionId);
     await delay(700);
 
@@ -202,3 +202,4 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
+
