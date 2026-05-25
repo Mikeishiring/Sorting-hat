@@ -51,12 +51,19 @@ const state = {
   personId: "your-handle",
   visibility: "cohort-public",
 };
+let renderQueued = false;
 
 const app = document.querySelector("#app");
+const viewBox = {
+  x: -250,
+  y: -190,
+  width: 500,
+  height: 380,
+};
 const layerRadii = {
-  color: 58,
-  shape: 94,
-  texture: 128,
+  color: 66,
+  shape: 120,
+  texture: 174,
 };
 const layerLabels = {
   color: "color",
@@ -96,8 +103,8 @@ function slugify(value) {
 function localPoint(event, svg) {
   const rect = svg.getBoundingClientRect();
   return {
-    x: ((event.clientX - rect.left) / rect.width) * 420 - 210,
-    y: ((event.clientY - rect.top) / rect.height) * 340 - 170,
+    x: ((event.clientX - rect.left) / rect.width) * viewBox.width + viewBox.x,
+    y: ((event.clientY - rect.top) / rect.height) * viewBox.height + viewBox.y,
   };
 }
 
@@ -178,7 +185,7 @@ function render() {
       <section class="instrument-panel">
         <div class="stage-copy">
           <span class="kicker">${stage.eyebrow}</span>
-          <h1>Build one mark in three layers</h1>
+          <h1>One mark, three layers</h1>
           <p>${stage.question} ${stage.help}</p>
         </div>
         ${renderInstrument()}
@@ -223,13 +230,14 @@ function renderInstrument() {
   const parts = markParts();
   const hasMark = !!(parts.color || parts.shape || parts.texture);
   return `
-    <svg class="instrument" viewBox="-210 -170 420 340" role="application" aria-label="Three layer profile mark composer">
+    <svg class="instrument" viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}" role="application" aria-label="Three layer profile mark composer">
       <defs>
         <filter id="soft-shadow" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="rgba(0,0,0,0.38)"></feDropShadow>
         </filter>
       </defs>
       <g class="mesh">${meshLines()}</g>
+      <g class="axis-guides">${axisGuides()}</g>
       ${stages.map(renderLayerRing).join("")}
       ${renderCommittedTrail()}
       ${state.drag ? renderDragProbe() : ""}
@@ -268,7 +276,7 @@ function renderOption(stage, item) {
   return `
     <g class="option" data-option="${item.id}" data-layer="${stage.id}" data-current="${current}" data-active="${active}" data-preview="${previewed}" data-committed="${committed}" transform="translate(${x} ${y})">
       <circle class="option-hit" cx="0" cy="0" r="34"></circle>
-      ${optionGraphic(stage, item, current || committed || previewed ? 38 : 30)}
+      ${optionGraphic(stage, item, current || committed || previewed ? 34 : 26)}
       <title>${item.label}: ${item.note}</title>
     </g>
     <text class="option-label" data-current="${current}" data-preview="${previewed}" data-committed="${committed}" x="${label.x}" y="${label.y}" text-anchor="${label.anchor}">${item.label}</text>
@@ -334,6 +342,29 @@ function renderCommittedTrail() {
       ${points.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="5"></circle>`).join("")}
     </g>
   `;
+}
+
+function axisGuides() {
+  const outer = layerRadii.texture;
+  const gaps = [
+    [layerRadii.color + 26, layerRadii.shape - 24],
+    [layerRadii.shape + 26, layerRadii.texture - 24],
+  ];
+  return [0, 1, 2, 3].flatMap((index) => {
+    const angle = -Math.PI / 2 + index * Math.PI / 2;
+    return gaps.map(([inner, outerGap]) => {
+      const x1 = Math.cos(angle) * inner;
+      const y1 = Math.sin(angle) * inner;
+      const x2 = Math.cos(angle) * outerGap;
+      const y2 = Math.sin(angle) * outerGap;
+      return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"></line>`;
+    });
+  }).join("") + [0, 1, 2, 3].map((index) => {
+    const angle = -Math.PI / 2 + index * Math.PI / 2;
+    const x = Math.cos(angle) * outer;
+    const y = Math.sin(angle) * outer;
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5"></circle>`;
+  }).join("");
 }
 
 function renderDragProbe() {
@@ -429,9 +460,9 @@ function textureFill(type, scale = 1) {
 
 function meshLines() {
   const lines = [];
-  for (let value = -192; value <= 192; value += 24) {
-    lines.push(`<line x1="-198" y1="${value}" x2="198" y2="${value}"></line>`);
-    lines.push(`<line x1="${value}" y1="-158" x2="${value}" y2="158"></line>`);
+  for (let value = -240; value <= 240; value += 24) {
+    lines.push(`<line x1="-232" y1="${value}" x2="232" y2="${value}"></line>`);
+    lines.push(`<line x1="${value}" y1="-176" x2="${value}" y2="176"></line>`);
   }
   return lines.join("");
 }
@@ -452,8 +483,17 @@ function onPointerDown(event) {
   event.preventDefault();
   const point = localPoint(event, svg);
   if (Math.hypot(point.x, point.y) > 42) {
-    updateHover(point);
-    renderHoverOnly();
+    const hit = hitAnyLayer(point);
+    if (hit) {
+      state.selections[hit.stage.id] = hit.item.id;
+      const nextUnset = stages.findIndex((stage) => !state.selections[stage.id]);
+      state.stage = nextUnset === -1 ? hit.stageIndex : nextUnset;
+      state.hover = null;
+      render();
+    } else {
+      updateHover(point);
+      renderHoverOnly();
+    }
     return;
   }
   state.drag = { x: point.x, y: point.y, path: {} };
@@ -477,7 +517,7 @@ function onWindowPointerMove(event) {
   state.drag.x = point.x;
   state.drag.y = point.y;
   updateDragPath(point);
-  render();
+  queueRender();
 }
 
 function onPointerUp() {
@@ -517,6 +557,15 @@ function updateDragPath(point) {
 function renderHoverOnly() {
   app.querySelectorAll(".option").forEach((item) => {
     item.dataset.active = String(state.hover?.stageId === item.dataset.layer && state.hover?.id === item.dataset.option);
+  });
+}
+
+function queueRender() {
+  if (renderQueued) return;
+  renderQueued = true;
+  window.requestAnimationFrame(() => {
+    renderQueued = false;
+    render();
   });
 }
 
