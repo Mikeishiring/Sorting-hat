@@ -1,6 +1,6 @@
 # Sorting Hat
 
-Public demo: https://sorting-hat.pages.dev/
+Public demo: https://sorting-hat-ak1.pages.dev/
 
 This repo is only for the Sorting Hat routing-mark prototypes. The root route is the click-drag routing instrument: a participant holds the center, drags through a small set of passes, and produces a compact routing mark that can describe current state, contribution shape, and preferred interaction style.
 
@@ -30,7 +30,7 @@ This drives the root routing instrument in headless Edge and checks that it prod
 npm run deploy
 ```
 
-This project deploys only to the Cloudflare Pages project `sorting-hat`, which serves `https://sorting-hat.pages.dev/`.
+This project deploys only to the Cloudflare Pages project `sorting-hat`, which serves `https://sorting-hat-ak1.pages.dev/`.
 
 ## Project Boundary
 
