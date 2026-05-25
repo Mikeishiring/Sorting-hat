@@ -5,8 +5,10 @@
   --muted: rgba(241, 236, 231, 0.66);
   --line: rgba(241, 236, 231, 0.14);
   --line-strong: rgba(241, 236, 231, 0.26);
-  --oxide: #8f220e;
-  --oxide-2: #b43a19;
+  --signal: #55d88a;
+  --signal-2: #64a7ff;
+  --warm: #f4b860;
+  --violet: #a78bfa;
   --font-sans: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -18,8 +20,10 @@ body {
   background:
     linear-gradient(rgba(241, 236, 231, 0.026) 1px, transparent 1px),
     linear-gradient(90deg, rgba(241, 236, 231, 0.026) 1px, transparent 1px),
-    radial-gradient(820px 520px at 52% -12%, rgba(143, 34, 14, 0.23), transparent 66%),
-    linear-gradient(180deg, #2a2526 0%, #211d1f 48%, var(--bg) 100%);
+    radial-gradient(780px 480px at 18% 0%, rgba(100, 167, 255, 0.14), transparent 64%),
+    radial-gradient(760px 480px at 82% 4%, rgba(85, 216, 138, 0.12), transparent 62%),
+    radial-gradient(620px 420px at 56% 100%, rgba(244, 184, 96, 0.08), transparent 65%),
+    linear-gradient(180deg, #211f22 0%, #1b191b 48%, var(--bg) 100%);
   background-size: 34px 34px, 34px 34px, auto, auto;
   color: var(--paper);
   font-family: var(--font-sans);
@@ -52,7 +56,7 @@ button { cursor: pointer; }
   content: "";
   width: 14px;
   height: 14px;
-  border: 2px solid var(--oxide-2);
+  border: 2px solid var(--signal);
   transform: rotate(45deg);
 }
 .brand strong {
@@ -81,11 +85,11 @@ button { cursor: pointer; }
 .pass-tab { min-width: 142px; padding: 10px 12px; text-align: left; }
 .pass-tab span { display: block; color: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
 .pass-tab strong { display: block; margin-top: 3px; font-size: 14px; font-weight: 700; }
-.pass-tab[data-active="true"], .property[data-active="true"] { border-color: rgba(180, 58, 25, 0.82); background: rgba(143, 34, 14, 0.18); }
+.pass-tab[data-active="true"], .property[data-active="true"] { border-color: rgba(85, 216, 138, 0.58); background: rgba(85, 216, 138, 0.09); }
 .pass-tab[data-done="true"] { box-shadow: inset 0 -2px 0 rgba(110, 231, 183, 0.82); }
 .btn { min-height: 42px; padding: 0 14px; }
 .btn:hover { transform: translateY(-1px); border-color: rgba(241, 236, 231, 0.34); }
-.btn.primary { background: var(--oxide); border-color: rgba(180, 58, 25, 0.84); }
+.btn.primary { background: rgba(85, 216, 138, 0.18); border-color: rgba(85, 216, 138, 0.55); }
 .btn.reset { border-color: rgba(241, 236, 231, 0.28); }
 
 .layout {
@@ -99,13 +103,16 @@ button { cursor: pointer; }
 .instrument-panel, .readout {
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: radial-gradient(520px 340px at 50% 8%, rgba(241, 236, 231, 0.055), transparent 66%), var(--panel);
+  background:
+    radial-gradient(520px 340px at 50% 8%, rgba(241, 236, 231, 0.052), transparent 66%),
+    linear-gradient(135deg, rgba(100, 167, 255, 0.04), rgba(85, 216, 138, 0.025) 54%, rgba(167, 139, 250, 0.035)),
+    var(--panel);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(18px);
 }
 .instrument-panel { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
 .stage-copy { padding: 22px 24px 0; }
-.stage-copy h1 { margin: 8px 0 0; font-size: clamp(38px, 5vw, 70px); line-height: 0.92; letter-spacing: 0; }
+.stage-copy h1 { margin: 8px 0 0; font-size: clamp(34px, 4vw, 58px); line-height: 0.95; letter-spacing: 0; max-width: 760px; }
 .stage-copy p, .readout p { margin: 12px 0 0; color: var(--muted); line-height: 1.45; }
 
 .instrument {
@@ -116,11 +123,32 @@ button { cursor: pointer; }
   overflow: visible;
 }
 .mesh line { stroke: rgba(241, 236, 231, 0.055); stroke-width: 0.8; }
-.ring { fill: none; stroke: rgba(241, 236, 231, 0.12); stroke-width: 1; }
-.ring.outer { stroke: rgba(241, 236, 231, 0.18); }
-.drag-line { stroke: rgba(241, 236, 231, 0.82); stroke-width: 2.5; stroke-linecap: round; pointer-events: none; }
-.trail line { stroke: rgba(180, 58, 25, 0.76); stroke-width: 2; stroke-linecap: round; }
-.trail circle { fill: var(--paper); stroke: var(--oxide); stroke-width: 1.5; }
+.layer-ring circle {
+  fill: none;
+  stroke: rgba(241, 236, 231, 0.13);
+  stroke-width: 1.1;
+  transition: stroke 260ms var(--ease), stroke-width 260ms var(--ease), opacity 260ms var(--ease);
+}
+.layer-ring[data-active="true"] circle { stroke: rgba(241, 236, 231, 0.36); stroke-width: 1.6; }
+.layer-ring[data-filled="true"] circle { stroke-dasharray: 2 7; stroke-linecap: round; }
+.layer-ring text {
+  fill: rgba(241, 236, 231, 0.34);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.layer-ring[data-active="true"] text,
+.layer-ring[data-filled="true"] text { fill: rgba(241, 236, 231, 0.7); }
+.trail circle {
+  fill: var(--paper);
+  stroke: rgba(23, 20, 21, 0.72);
+  stroke-width: 1.4;
+  filter: drop-shadow(0 0 10px rgba(241, 236, 231, 0.16));
+}
+.drag-probe { pointer-events: none; }
+.drag-probe circle:first-child { fill: var(--paper); stroke: rgba(23, 20, 21, 0.52); stroke-width: 1; }
+.drag-probe circle:last-child { fill: none; stroke: rgba(241, 236, 231, 0.34); stroke-width: 1; animation: breathe-ring 900ms var(--ease) infinite alternate; }
 
 .source text {
   fill: var(--bg);
@@ -132,11 +160,21 @@ button { cursor: pointer; }
   pointer-events: none;
 }
 .source-hit { fill: transparent; stroke: rgba(241, 236, 231, 0.2); stroke-width: 1; }
-.option { cursor: grab; }
+.option {
+  cursor: grab;
+  opacity: 0.18;
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease);
+}
+.option[data-current="true"],
+.option[data-committed="true"],
+.option[data-preview="true"] { opacity: 1; }
 .option-hit { fill: rgba(241, 236, 231, 0.01); }
 .option[data-active="true"] .color-node,
 .option[data-active="true"] .shape-node,
 .option[data-active="true"] .texture-node rect,
+.option[data-preview="true"] .color-node,
+.option[data-preview="true"] .shape-node,
+.option[data-preview="true"] .texture-node rect,
 .option[data-committed="true"] .color-node,
 .option[data-committed="true"] .shape-node,
 .option[data-committed="true"] .texture-node rect {
@@ -150,13 +188,16 @@ button { cursor: pointer; }
 .texture-node line, .texture-node path { fill: none; stroke: rgba(241, 236, 231, 0.86); stroke-width: 2.3; stroke-linecap: round; }
 .texture-node circle { fill: rgba(241, 236, 231, 0.86); }
 .option-label {
-  fill: rgba(241, 236, 231, 0.72);
+  fill: rgba(241, 236, 231, 0.42);
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.11em;
   text-transform: uppercase;
   pointer-events: none;
+  opacity: 0;
+  transition: fill 220ms var(--ease), opacity 220ms var(--ease);
 }
+.option-label[data-current="true"] { fill: rgba(241, 236, 231, 0.78); opacity: 1; }
 
 .readout { padding: 20px; display: grid; align-content: start; gap: 15px; }
 .readout h2 { margin: 4px 0 0; font-size: clamp(32px, 4vw, 56px); line-height: 0.94; text-transform: lowercase; }
@@ -225,6 +266,11 @@ input, select {
   border-radius: 8px;
   background: rgba(23, 20, 21, 0.96);
   padding: 11px 14px;
+}
+
+@keyframes breathe-ring {
+  from { opacity: 0.32; transform: scale(0.86); }
+  to { opacity: 0.82; transform: scale(1.08); }
 }
 
 @media (max-width: 1120px) {

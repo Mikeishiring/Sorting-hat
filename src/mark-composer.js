@@ -4,21 +4,22 @@ const stages = [
   {
     id: "color",
     eyebrow: "pass 1",
-    title: "read color",
+    title: "color read",
     question: "How should the cohort read you?",
-    help: "Drag from the center to one color. This sets the fill only.",
+    help: "Start in the center and pull outward. The first ring sets fill color only.",
     options: [
-      option("open", "Open", "blue", { x: 0, y: -104 }, { color: "#5FA8FF", note: "Direction is still forming." }),
-      option("shipping", "Shipping", "green", { x: 104, y: 52 }, { color: "#6EE7B7", note: "Actively moving and unblocking." }),
-      option("available", "Available", "amber", { x: -104, y: 52 }, { color: "#FFB454", note: "Can review, route, or help." }),
+      option("open", "Open", "blue", { x: 0, y: -104 }, { color: "#64A7FF", note: "Open-ended, still forming, useful for exploration." }),
+      option("shipping", "Shipping", "green", { x: 104, y: 52 }, { color: "#55D88A", note: "Actively moving work forward." }),
+      option("available", "Available", "amber", { x: 0, y: 104 }, { color: "#F4B860", note: "Available to help, review, or route." }),
+      option("focused", "Focused", "violet", { x: -104, y: 0 }, { color: "#A78BFA", note: "Protecting depth or narrowing surface area." }),
     ],
   },
   {
     id: "shape",
     eyebrow: "pass 2",
-    title: "contribution shape",
+    title: "shape role",
     question: "What kind of contribution should people expect?",
-    help: "Drag to a geometry. This sets shape only.",
+    help: "The second ring sets geometry only.",
     options: [
       option("engineering", "Engineering", "triangle", { x: 0, y: -112 }, { shape: "triangle", note: "Systems, infra, implementation." }),
       option("design", "Design", "circle", { x: 112, y: 0 }, { shape: "circle", note: "UX, demos, visual language." }),
@@ -29,9 +30,9 @@ const stages = [
   {
     id: "texture",
     eyebrow: "pass 3",
-    title: "interior style",
+    title: "surface mode",
     question: "How should people approach you?",
-    help: "Drag to a surface treatment. This lives inside the final shape.",
+    help: "The outer ring sets the interior surface only.",
     options: [
       option("direct", "Direct", "solid", { x: 0, y: -112 }, { texture: "solid", note: "Direct asks are welcome." }),
       option("pair", "Pair", "hatch", { x: 112, y: 0 }, { texture: "hatch", note: "Open to paired work." }),
@@ -52,6 +53,16 @@ const state = {
 };
 
 const app = document.querySelector("#app");
+const layerRadii = {
+  color: 58,
+  shape: 94,
+  texture: 128,
+};
+const layerLabels = {
+  color: "color",
+  shape: "shape",
+  texture: "surface",
+};
 
 function option(id, label, value, point, extra = {}) {
   return { id, label, value, point, ...extra };
@@ -85,13 +96,30 @@ function slugify(value) {
 function localPoint(event, svg) {
   const rect = svg.getBoundingClientRect();
   return {
-    x: ((event.clientX - rect.left) / rect.width) * 360 - 180,
-    y: ((event.clientY - rect.top) / rect.height) * 300 - 150,
+    x: ((event.clientX - rect.left) / rect.width) * 420 - 210,
+    y: ((event.clientY - rect.top) / rect.height) * 340 - 170,
   };
 }
 
 function hitOption(point, stage = activeStage()) {
-  return stage.options.find((item) => Math.hypot(point.x - item.point.x, point.y - item.point.y) < 32) || null;
+  return stage.options.find((item) => {
+    const target = optionPoint(stage, item);
+    return Math.hypot(point.x - target.x, point.y - target.y) < 34;
+  }) || null;
+}
+
+function hitAnyLayer(point) {
+  let nearest = null;
+  stages.forEach((stage, stageIndex) => {
+    stage.options.forEach((item) => {
+      const target = optionPoint(stage, item);
+      const distance = Math.hypot(point.x - target.x, point.y - target.y);
+      if (distance < 34 && (!nearest || distance < nearest.distance)) {
+        nearest = { stage, stageIndex, item, distance };
+      }
+    });
+  });
+  return nearest;
 }
 
 function snapshot() {
@@ -150,10 +178,10 @@ function render() {
       <section class="instrument-panel">
         <div class="stage-copy">
           <span class="kicker">${stage.eyebrow}</span>
-          <h1>${stage.question}</h1>
-          <p>${stage.help}</p>
+          <h1>Build one mark in three layers</h1>
+          <p>${stage.question} ${stage.help}</p>
         </div>
-        ${renderInstrument(stage)}
+        ${renderInstrument()}
       </section>
 
       <aside class="readout">
@@ -191,44 +219,102 @@ function renderProperty(stage) {
   `;
 }
 
-function renderInstrument(stage) {
+function renderInstrument() {
   const parts = markParts();
   const hasMark = !!(parts.color || parts.shape || parts.texture);
   return `
-    <svg class="instrument" viewBox="-180 -150 360 300" role="application" aria-label="${stage.question}">
+    <svg class="instrument" viewBox="-210 -170 420 340" role="application" aria-label="Three layer profile mark composer">
       <defs>
         <filter id="soft-shadow" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="rgba(0,0,0,0.38)"></feDropShadow>
         </filter>
       </defs>
       <g class="mesh">${meshLines()}</g>
-      <circle class="ring" cx="0" cy="0" r="56"></circle>
-      <circle class="ring outer" cx="0" cy="0" r="122"></circle>
+      ${stages.map(renderLayerRing).join("")}
       ${renderCommittedTrail()}
-      ${state.drag ? `<line class="drag-line" x1="0" y1="0" x2="${state.drag.x.toFixed(1)}" y2="${state.drag.y.toFixed(1)}"></line>` : ""}
+      ${state.drag ? renderDragProbe() : ""}
       <g class="source">
         ${renderFinalMark("small")}
         <circle class="source-hit" cx="0" cy="0" r="30"></circle>
         ${hasMark ? "" : `<text x="0" y="4" text-anchor="middle">${state.drag ? "drag" : "hold"}</text>`}
       </g>
-      ${stage.options.map((item) => renderOption(stage, item)).join("")}
+      ${stages.map(renderLayerOptions).join("")}
     </svg>
   `;
 }
 
-function renderOption(stage, item) {
-  const active = state.hover?.id === item.id;
-  const committed = selected(stage.id)?.id === item.id;
-  const { x, y } = item.point;
-  const labelY = y < -70 ? y - 24 : y > 70 ? y + 30 : y + 43;
+function renderLayerRing(stage, index) {
+  const active = stage.id === activeStage().id;
+  const filled = !!selected(stage.id) || !!state.drag?.path?.[stage.id];
   return `
-    <g class="option" data-option="${item.id}" data-active="${active}" data-committed="${committed}" transform="translate(${x} ${y})">
+    <g class="layer-ring" data-layer="${stage.id}" data-active="${active}" data-filled="${filled}">
+      <circle cx="0" cy="0" r="${layerRadii[stage.id]}"></circle>
+      <text x="${-layerRadii[stage.id] - 9}" y="${-layerRadii[stage.id] - 6}" text-anchor="end">${index + 1} ${layerLabels[stage.id]}</text>
+    </g>
+  `;
+}
+
+function renderLayerOptions(stage) {
+  return stage.options.map((item) => renderOption(stage, item)).join("");
+}
+
+function renderOption(stage, item) {
+  const active = state.hover?.stageId === stage.id && state.hover?.id === item.id;
+  const previewed = state.drag?.path?.[stage.id] === item.id;
+  const committed = selected(stage.id)?.id === item.id;
+  const current = stage.id === activeStage().id;
+  const { x, y } = optionPoint(stage, item);
+  const label = optionLabelPoint(stage, x, y, layerRadii[stage.id]);
+  return `
+    <g class="option" data-option="${item.id}" data-layer="${stage.id}" data-current="${current}" data-active="${active}" data-preview="${previewed}" data-committed="${committed}" transform="translate(${x} ${y})">
       <circle class="option-hit" cx="0" cy="0" r="34"></circle>
-      ${optionGraphic(stage, item, 42)}
+      ${optionGraphic(stage, item, current || committed || previewed ? 38 : 30)}
       <title>${item.label}: ${item.note}</title>
     </g>
-    <text class="option-label" x="${x}" y="${labelY}" text-anchor="middle">${item.label}</text>
+    <text class="option-label" data-current="${current}" data-preview="${previewed}" data-committed="${committed}" x="${label.x}" y="${label.y}" text-anchor="${label.anchor}">${item.label}</text>
   `;
+}
+
+function optionPoint(stage, item) {
+  const index = stage.options.findIndex((option) => option.id === item.id);
+  const count = stage.options.length;
+  const angle = optionAngle(stage, item);
+  const radius = layerRadii[stage.id];
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+  };
+}
+
+function optionAngle(stage, item) {
+  const index = stage.options.findIndex((option) => option.id === item.id);
+  return -Math.PI / 2 + index * Math.PI * 2 / stage.options.length;
+}
+
+function angleDelta(a, b) {
+  return Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+}
+
+function nearestByAngle(stage, point) {
+  const angle = Math.atan2(point.y, point.x);
+  return stage.options.reduce((nearest, item) => {
+    const distance = angleDelta(angle, optionAngle(stage, item));
+    return !nearest || distance < nearest.distance ? { item, distance } : nearest;
+  }, null)?.item || null;
+}
+
+function optionLabelPoint(stage, x, y, radius) {
+  const labelOffsets = {
+    color: -18,
+    shape: 21,
+    texture: 29,
+  };
+  const distance = radius + labelOffsets[stage.id];
+  const angle = Math.atan2(y, x);
+  const labelX = Math.cos(angle) * distance;
+  const labelY = Math.sin(angle) * distance + 3;
+  const anchor = labelX > 16 ? "start" : labelX < -16 ? "end" : "middle";
+  return { x: labelX, y: labelY, anchor };
 }
 
 function optionGraphic(stage, item, size) {
@@ -238,12 +324,25 @@ function optionGraphic(stage, item, size) {
 }
 
 function renderCommittedTrail() {
-  const points = stages.map((stage) => selected(stage.id)?.point).filter(Boolean);
+  const points = stages.map((stage) => {
+    const choice = stage.options.find((item) => item.id === state.drag?.path?.[stage.id]) || selected(stage.id);
+    return choice ? optionPoint(stage, choice) : null;
+  }).filter(Boolean);
   if (!points.length) return "";
   return `
     <g class="trail">
-      ${points.map((point, index) => index === 0 ? "" : `<line x1="${points[index - 1].x}" y1="${points[index - 1].y}" x2="${point.x}" y2="${point.y}"></line>`).join("")}
       ${points.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="5"></circle>`).join("")}
+    </g>
+  `;
+}
+
+function renderDragProbe() {
+  const x = state.drag.x.toFixed(1);
+  const y = state.drag.y.toFixed(1);
+  return `
+    <g class="drag-probe" transform="translate(${x} ${y})">
+      <circle r="7"></circle>
+      <circle r="15"></circle>
     </g>
   `;
 }
@@ -330,9 +429,9 @@ function textureFill(type, scale = 1) {
 
 function meshLines() {
   const lines = [];
-  for (let value = -150; value <= 150; value += 24) {
-    lines.push(`<line x1="-168" y1="${value}" x2="168" y2="${value}"></line>`);
-    lines.push(`<line x1="${value}" y1="-138" x2="${value}" y2="138"></line>`);
+  for (let value = -192; value <= 192; value += 24) {
+    lines.push(`<line x1="-198" y1="${value}" x2="198" y2="${value}"></line>`);
+    lines.push(`<line x1="${value}" y1="-158" x2="${value}" y2="158"></line>`);
   }
   return lines.join("");
 }
@@ -352,8 +451,13 @@ function onPointerDown(event) {
   const svg = event.currentTarget;
   event.preventDefault();
   const point = localPoint(event, svg);
-  state.drag = point;
-  updateHover(point);
+  if (Math.hypot(point.x, point.y) > 42) {
+    updateHover(point);
+    renderHoverOnly();
+    return;
+  }
+  state.drag = { x: point.x, y: point.y, path: {} };
+  state.hover = null;
   render();
 }
 
@@ -370,30 +474,49 @@ function onWindowPointerMove(event) {
   const svg = app.querySelector(".instrument");
   if (!svg) return;
   const point = localPoint(event, svg);
-  state.drag = point;
-  updateHover(point);
+  state.drag.x = point.x;
+  state.drag.y = point.y;
+  updateDragPath(point);
   render();
 }
 
 function onPointerUp() {
-  if (state.hover) {
-    const stageId = activeStage().id;
-    state.selections[stageId] = state.hover.id;
-    const nextUnset = stages.findIndex((stage, index) => index > state.stage && !selected(stage.id));
-    if (nextUnset !== -1) state.stage = nextUnset;
+  if (state.drag?.path) {
+    Object.entries(state.drag.path).forEach(([stageId, optionId]) => {
+      state.selections[stageId] = optionId;
+    });
+  } else if (state.hover) {
+    state.selections[state.hover.stageId] = state.hover.id;
   }
+  const nextUnset = stages.findIndex((stage) => !state.selections[stage.id]);
+  state.stage = nextUnset === -1 ? stages.length - 1 : nextUnset;
   state.drag = null;
   state.hover = null;
   render();
 }
 
 function updateHover(point) {
-  state.hover = hitOption(point);
+  const hit = hitAnyLayer(point);
+  state.hover = hit ? { stageId: hit.stage.id, id: hit.item.id } : null;
+  if (hit) state.stage = hit.stageIndex;
+}
+
+function updateDragPath(point) {
+  const radius = Math.hypot(point.x, point.y);
+  let latest = null;
+  stages.forEach((stage, stageIndex) => {
+    if (radius < layerRadii[stage.id] - 18) return;
+    const item = nearestByAngle(stage, point);
+    state.drag.path[stage.id] = item.id;
+    latest = { stage, stageIndex, item };
+  });
+  state.hover = latest ? { stageId: latest.stage.id, id: latest.item.id } : null;
+  if (latest) state.stage = latest.stageIndex;
 }
 
 function renderHoverOnly() {
   app.querySelectorAll(".option").forEach((item) => {
-    item.dataset.active = String(state.hover?.id === item.dataset.option);
+    item.dataset.active = String(state.hover?.stageId === item.dataset.layer && state.hover?.id === item.dataset.option);
   });
 }
 

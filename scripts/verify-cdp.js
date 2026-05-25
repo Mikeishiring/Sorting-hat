@@ -139,7 +139,59 @@ async function main() {
       captureBeyondViewport: false,
     }, sessionId);
     fs.writeFileSync("prototype-sorting-hat.png", Buffer.from(shot.data, "base64"));
-    console.log(JSON.stringify(value, null, 2));
+
+    await cdp.send("Page.navigate", {
+      url: `http://localhost:${appPort}/mark-composer.html`,
+    }, sessionId);
+    await delay(700);
+
+    const composerResult = await cdp.send("Runtime.evaluate", {
+      awaitPromise: true,
+      returnByValue: true,
+      expression: `(async () => {
+        const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        const api = window.__markComposer;
+        api.state.selections.color = "shipping";
+        api.state.selections.shape = "engineering";
+        api.state.selections.texture = "route";
+        api.state.stage = 2;
+        api.render();
+        await wait(120);
+        const snap = api.snapshot();
+        return {
+          title: document.title,
+          name: snap.routing_mark.name,
+          source: snap.source,
+          complete: Boolean(snap.routing_mark.color && snap.routing_mark.shape && snap.routing_mark.texture),
+          rings: document.querySelectorAll(".layer-ring").length,
+          currentOptions: document.querySelectorAll('.option[data-current="true"]').length,
+          scrollWidth: document.documentElement.scrollWidth,
+          clientWidth: document.documentElement.clientWidth
+        };
+      })()`,
+    }, sessionId);
+
+    if (composerResult.exceptionDetails) {
+      throw new Error(composerResult.exceptionDetails.text || "mark composer evaluation failed");
+    }
+
+    const composerValue = composerResult.result.value;
+    if (
+      !composerValue.complete ||
+      composerValue.source !== "sorting-hat-radial-mark-composer" ||
+      composerValue.rings !== 3 ||
+      composerValue.currentOptions < 4 ||
+      composerValue.scrollWidth > composerValue.clientWidth
+    ) {
+      throw new Error(JSON.stringify(composerValue, null, 2));
+    }
+
+    const composerShot = await cdp.send("Page.captureScreenshot", {
+      format: "png",
+      captureBeyondViewport: false,
+    }, sessionId);
+    fs.writeFileSync("prototype-mark-composer.png", Buffer.from(composerShot.data, "base64"));
+    console.log(JSON.stringify({ sortingHat: value, markComposer: composerValue }, null, 2));
   } finally {
     if (cdp) cdp.close();
     edge.kill();
