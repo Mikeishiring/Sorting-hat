@@ -192,6 +192,8 @@ function renderProperty(stage) {
 }
 
 function renderInstrument(stage) {
+  const parts = markParts();
+  const hasMark = !!(parts.color || parts.shape || parts.texture);
   return `
     <svg class="instrument" viewBox="-180 -150 360 300" role="application" aria-label="${stage.question}">
       <defs>
@@ -207,7 +209,7 @@ function renderInstrument(stage) {
       <g class="source">
         ${renderFinalMark("small")}
         <circle class="source-hit" cx="0" cy="0" r="30"></circle>
-        <text x="0" y="4" text-anchor="middle">${state.drag ? "drag" : "hold"}</text>
+        ${hasMark ? "" : `<text x="0" y="4" text-anchor="middle">${state.drag ? "drag" : "hold"}</text>`}
       </g>
       ${stage.options.map((item) => renderOption(stage, item)).join("")}
     </svg>
@@ -253,6 +255,7 @@ function renderFinalMark(size = "large") {
   const color = parts.color?.color || "#F1ECE7";
   const markSize = 92 * scale;
   const clipId = `clip-${size}`;
+  if (size === "small") return renderInlineMark(parts, shape, color, markSize, clipId, scale);
   if (!parts.color && !parts.shape && !parts.texture) {
     return `<svg class="mark ${size}" viewBox="-60 -60 120 120"><circle class="placeholder" cx="0" cy="0" r="${38 * scale}"></circle></svg>`;
   }
@@ -264,6 +267,21 @@ function renderFinalMark(size = "large") {
       ${parts.shape ? shapeMarkup(shape, 0, 0, markSize, `class="mark-outline"`) : ""}
       <circle class="mark-core" cx="0" cy="0" r="${6 * scale}"></circle>
     </svg>
+  `;
+}
+
+function renderInlineMark(parts, shape, color, markSize, clipId, scale) {
+  if (!parts.color && !parts.shape && !parts.texture) {
+    return `<g class="mark-inline small"><circle class="placeholder" cx="0" cy="0" r="${38 * scale}"></circle></g>`;
+  }
+  return `
+    <g class="mark-inline small" aria-label="Profile mark">
+      <defs><clipPath id="${clipId}">${shapeMarkup(shape, 0, 0, markSize, "")}</clipPath></defs>
+      ${shapeMarkup(shape, 0, 0, markSize, `class="mark-fill" style="--mark-color:${color}"`)}
+      ${parts.shape && parts.texture ? `<g class="mark-texture texture-${parts.texture.texture}" clip-path="url(#${clipId})">${textureFill(parts.texture.texture, scale)}</g>` : ""}
+      ${parts.shape ? shapeMarkup(shape, 0, 0, markSize, `class="mark-outline"`) : ""}
+      <circle class="mark-core" cx="0" cy="0" r="${6 * scale}"></circle>
+    </g>
   `;
 }
 
