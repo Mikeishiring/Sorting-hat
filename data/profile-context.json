@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "source": "shape-rotator-profile-context-sample",
+  "updated_at": "2026-05-25",
+  "people": [
+    {
+      "id": "mira-chen",
+      "name": "Mira Chen",
+      "role": "Product / story",
+      "domain": "design, agentic tooling, research-to-product",
+      "now": "Tightening a prototype into a demoable surface.",
+      "weekly_intention": "Ship an inspectable prototype and get interface critique.",
+      "availability_pref": "Async first; live blocks are useful if the agenda is narrow.",
+      "skill_areas": ["design", "product", "agentic", "research-to-product"],
+      "skills": ["UX", "information design", "demo story", "product sequencing"],
+      "offering": ["product/interface pass", "demo story", "routing context"],
+      "seeking": ["design critique", "implementation feedback", "high-context users"],
+      "contribute_interests": ["product/interface pass", "demo story"]
+    },
+    {
+      "id": "samir-patel",
+      "name": "Samir Patel",
+      "role": "Engineering",
+      "domain": "TEE, infra, agent runtime",
+      "now": "Unblocking technical risk in the core path.",
+      "weekly_intention": "Unblock the highest-risk technical path and ship a small proof.",
+      "availability_pref": "Heads-down this week; route only high-fit blockers.",
+      "skill_areas": ["tee", "infra", "agentic", "protocol"],
+      "skills": ["systems", "architecture", "reliability", "runtime"],
+      "offering": ["architecture review", "implementation debugging"],
+      "seeking": ["specific blockers", "test cases", "security review"],
+      "contribute_interests": ["architecture review", "technical risk review"]
+    },
+    {
+      "id": "ana-garcia",
+      "name": "Ana Garcia",
+      "role": "Community / ops",
+      "domain": "community, coordination, GTM",
+      "now": "Routing context across projects and helping people find the right asks.",
+      "weekly_intention": "Find users and route high-context introductions.",
+      "availability_pref": "Office-hours style windows for lightweight asks.",
+      "skill_areas": ["community", "ops", "bd-gtm", "strategy"],
+      "skills": ["coordination", "partner mapping", "community surface"],
+      "offering": ["intro routing", "office-hours asks", "market proof"],
+      "seeking": ["project summaries", "clear asks", "partner leads"],
+      "contribute_interests": ["intro routing", "demo story"]
+    }
+  ]
+}

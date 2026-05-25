@@ -19,6 +19,7 @@ copyFile(path.join(root, "src", "gesture.css"), path.join(dist, "src", "gesture.
 copyFile(path.join(root, "src", "gesture.js"), path.join(dist, "src", "gesture.js"));
 copyFile(path.join(root, "src", "mark-composer.css"), path.join(dist, "src", "mark-composer.css"));
 copyFile(path.join(root, "src", "mark-composer.js"), path.join(dist, "src", "mark-composer.js"));
+copyFile(path.join(root, "data", "profile-context.json"), path.join(dist, "data", "profile-context.json"));
 
 fs.writeFileSync(
   path.join(dist, "_headers"),

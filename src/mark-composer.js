@@ -23,8 +23,10 @@ const stages = [
     options: [
       option("engineering", "Engineering", "triangle", { x: 0, y: -112 }, { shape: "triangle", note: "Systems, infra, implementation." }),
       option("design", "Design", "circle", { x: 112, y: 0 }, { shape: "circle", note: "UX, demos, visual language." }),
-      option("strategy", "Strategy", "diamond", { x: 0, y: 112 }, { shape: "diamond", note: "Positioning and sequencing." }),
-      option("research", "Research", "hex", { x: -112, y: 0 }, { shape: "hex", note: "Assumptions and proof pressure." }),
+      option("strategy", "Strategy", "diamond", { x: 0, y: 112 }, { shape: "diamond", note: "Positioning, sequencing, product direction." }),
+      option("research", "Research", "hex", { x: -112, y: 0 }, { shape: "hex", note: "Assumptions, experiments, proof pressure." }),
+      option("ops", "Ops", "square", { x: -112, y: 0 }, { shape: "square", note: "Coordination, stewardship, cadence, community surface." }),
+      option("gtm", "GTM", "pentagon", { x: -112, y: 0 }, { shape: "pentagon", note: "Users, partners, narrative, market proof." }),
     ],
   },
   {
@@ -50,6 +52,9 @@ const state = {
   copied: "",
   personId: "your-handle",
   visibility: "cohort-public",
+  profileStatus: "loading",
+  profilePeople: [],
+  profilePerson: "",
 };
 let renderQueued = false;
 
@@ -96,6 +101,58 @@ function markParts() {
   };
 }
 
+function isComplete() {
+  return stages.every((stage) => selected(stage.id));
+}
+
+function currentProfile() {
+  return state.profilePeople.find((person) => person.id === state.profilePerson) || state.profilePeople[0] || null;
+}
+
+function profileSuggestion(profile = currentProfile()) {
+  if (!profile) return null;
+  const haystack = [
+    profile.role,
+    profile.domain,
+    profile.now,
+    profile.weekly_intention,
+    profile.availability_pref,
+    ...(profile.skill_areas || []),
+    ...(profile.skills || []),
+    ...(profile.offering || []),
+    ...(profile.seeking || []),
+    ...(profile.contribute_interests || []),
+  ].join(" ").toLowerCase();
+  const has = (...terms) => terms.some((term) => haystack.includes(term));
+  const color = has("heads-down", "focus", "protect") ? "focused"
+    : has("ship", "prototype", "unblock", "implementation") ? "shipping"
+      : has("review", "help", "office", "routing", "intro") ? "available"
+        : "open";
+  const shape = has("design", "ux", "interface", "surface") ? "design"
+    : has("engineering", "tee", "infra", "protocol", "runtime", "implementation") ? "engineering"
+      : has("research", "mechanism", "proof", "experiment") ? "research"
+        : has("strategy", "product", "positioning", "scope") ? "strategy"
+          : has("ops", "community", "coordination", "steward") ? "ops"
+            : has("gtm", "bd", "users", "partners", "market") ? "gtm"
+              : "engineering";
+  const texture = has("pair", "live block", "live pair") ? "pair"
+    : has("review", "critique", "pr", "architecture") ? "review"
+      : has("intro", "route", "office hours", "community") ? "route"
+        : "direct";
+  return { color, shape, texture };
+}
+
+function combinedRoutingSentence(profile = currentProfile()) {
+  const parts = markParts();
+  if (!profile || !isComplete()) return "";
+  const evidence = [
+    profile.weekly_intention,
+    profile.availability_pref,
+    (profile.contribute_interests || []).slice(0, 2).join(", "),
+  ].filter(Boolean).join("; ");
+  return `Use the ${parts.name} mark with ${profile.name || profile.id}'s profile evidence: ${evidence}.`;
+}
+
 function slugify(value) {
   return String(value || "your-handle").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "your-handle";
 }
@@ -115,9 +172,10 @@ function hitOption(point, stage = activeStage()) {
   }) || null;
 }
 
-function hitAnyLayer(point) {
+function hitAnyLayer(point, maxStageIndex = stages.length - 1) {
   let nearest = null;
   stages.forEach((stage, stageIndex) => {
+    if (stageIndex > maxStageIndex) return;
     stage.options.forEach((item) => {
       const target = optionPoint(stage, item);
       const distance = Math.hypot(point.x - target.x, point.y - target.y);
@@ -131,6 +189,8 @@ function hitAnyLayer(point) {
 
 function snapshot() {
   const parts = markParts();
+  const profile = currentProfile();
+  const suggestion = profileSuggestion(profile);
   return {
     schema_version: 1,
     updated_at: today,
@@ -149,6 +209,22 @@ function snapshot() {
       approach_signal: parts.texture?.label || "",
       display_phrase: sentence(),
     },
+    profile_context: profile ? {
+      source: "data/profile-context.json",
+      matched_person: profile.id,
+      source_status: state.profileStatus,
+      evidence_fields: {
+        now: profile.now || "",
+        weekly_intention: profile.weekly_intention || "",
+        availability_pref: profile.availability_pref || "",
+        contribute_interests: profile.contribute_interests || [],
+        skill_areas: profile.skill_areas || [],
+        offering: profile.offering || [],
+        seeking: profile.seeking || [],
+      },
+      suggested_mark: suggestion,
+      combined_routing_sentence: combinedRoutingSentence(profile),
+    } : null,
   };
 }
 
@@ -197,6 +273,7 @@ function render() {
         ${renderFinalMark("large")}
         <p>${sentence()}</p>
         <div class="property-list">${stages.map(renderProperty).join("")}</div>
+        ${renderProfileCombine(snap)}
         <div class="form-grid">
           <label><span class="field-label">person id</span><input data-field="personId" value="${escapeHtml(state.personId)}"></label>
           <label><span class="field-label">visibility</span><select data-field="visibility">${["cohort-public", "organizer-only", "public"].map((item) => `<option value="${item}" ${item === state.visibility ? "selected" : ""}>${item}</option>`).join("")}</select></label>
@@ -223,6 +300,35 @@ function renderProperty(stage) {
       <span class="property-swatch">${choice ? swatchFor(stage, choice) : ""}</span>
       <span><small>${stage.title}</small><strong>${choice?.label || "not set"}</strong></span>
     </button>
+  `;
+}
+
+function renderProfileCombine(snap) {
+  const profile = currentProfile();
+  const suggestion = profileSuggestion(profile);
+  const locked = !isComplete();
+  return `
+    <section class="profile-combine" data-locked="${locked}">
+      <div>
+        <span class="kicker">profile context</span>
+        <p>${locked ? "Complete the three visual layers, then combine the mark with profile evidence." : "Combine the visual mark with cohort profile fields at reveal."}</p>
+      </div>
+      <label>
+        <span class="field-label">source person</span>
+        <select data-field="profilePerson" ${state.profilePeople.length ? "" : "disabled"}>
+          ${state.profilePeople.length ? state.profilePeople.map((person) => `<option value="${person.id}" ${person.id === (profile?.id || "") ? "selected" : ""}>${person.name || person.id}</option>`).join("") : `<option>${state.profileStatus}</option>`}
+        </select>
+      </label>
+      ${profile ? `<div class="profile-evidence">
+        <strong>${escapeHtml(profile.weekly_intention || profile.now || "profile evidence pending")}</strong>
+        <span>${escapeHtml([profile.availability_pref, (profile.contribute_interests || []).slice(0, 2).join(", ")].filter(Boolean).join(" / "))}</span>
+      </div>` : ""}
+      ${suggestion ? `<div class="profile-suggestion">
+        <span>${suggestion.color}</span><span>${suggestion.shape}</span><span>${suggestion.texture}</span>
+      </div>` : ""}
+      <button class="btn" data-action="apply-profile" ${profile ? "" : "disabled"}>Seed from profile</button>
+      ${isComplete() && profile ? `<p class="combined-sentence">${escapeHtml(snap.profile_context.combined_routing_sentence)}</p>` : ""}
+    </section>
   `;
 }
 
@@ -267,19 +373,21 @@ function renderLayerOptions(stage) {
 }
 
 function renderOption(stage, item) {
+  const stageIndex = stages.indexOf(stage);
   const active = state.hover?.stageId === stage.id && state.hover?.id === item.id;
   const previewed = state.drag?.path?.[stage.id] === item.id;
   const committed = selected(stage.id)?.id === item.id;
   const current = stage.id === activeStage().id;
+  const available = stageIndex <= state.stage || committed || previewed;
   const { x, y } = optionPoint(stage, item);
   const label = optionLabelPoint(stage, x, y, layerRadii[stage.id]);
   return `
-    <g class="option" data-option="${item.id}" data-layer="${stage.id}" data-current="${current}" data-active="${active}" data-preview="${previewed}" data-committed="${committed}" transform="translate(${x} ${y})">
+    <g class="option" data-option="${item.id}" data-layer="${stage.id}" data-current="${current}" data-active="${active}" data-preview="${previewed}" data-committed="${committed}" data-available="${available}" transform="translate(${x} ${y})">
       <circle class="option-hit" cx="0" cy="0" r="34"></circle>
       ${optionGraphic(stage, item, current || committed || previewed ? 34 : 26)}
       <title>${item.label}: ${item.note}</title>
     </g>
-    <text class="option-label" data-current="${current}" data-preview="${previewed}" data-committed="${committed}" x="${label.x}" y="${label.y}" text-anchor="${label.anchor}">${item.label}</text>
+    <text class="option-label" data-current="${current}" data-preview="${previewed}" data-committed="${committed}" data-available="${available}" x="${label.x}" y="${label.y}" text-anchor="${label.anchor}">${item.label}</text>
   `;
 }
 
@@ -296,6 +404,17 @@ function optionPoint(stage, item) {
 
 function optionAngle(stage, item) {
   const index = stage.options.findIndex((option) => option.id === item.id);
+  if (stage.id === "shape") {
+    const degrees = {
+      engineering: -90,
+      design: 0,
+      strategy: 55,
+      research: 115,
+      ops: 180,
+      gtm: -145,
+    };
+    return (degrees[item.id] ?? 0) * Math.PI / 180;
+  }
   return -Math.PI / 2 + index * Math.PI * 2 / stage.options.length;
 }
 
@@ -423,10 +542,12 @@ function swatchFor(stage, item) {
 
 function shapeMarkup(shape, x, y, size, attrs = "") {
   if (shape === "circle") return `<circle ${attrs} cx="${x}" cy="${y}" r="${size / 2}"></circle>`;
+  if (shape === "square") return `<rect ${attrs} x="${x - size / 2}" y="${y - size / 2}" width="${size}" height="${size}" rx="${size * 0.08}"></rect>`;
   if (shape === "triangle") return `<polygon ${attrs} points="${x},${y - size / 2} ${x + size / 2},${y + size / 2} ${x - size / 2},${y + size / 2}"></polygon>`;
   if (shape === "diamond") return `<polygon ${attrs} points="${x},${y - size / 2} ${x + size / 2},${y} ${x},${y + size / 2} ${x - size / 2},${y}"></polygon>`;
-  const points = Array.from({ length: 6 }, (_, index) => {
-    const angle = -Math.PI / 2 + index * Math.PI * 2 / 6;
+  const sides = shape === "pentagon" ? 5 : 6;
+  const points = Array.from({ length: sides }, (_, index) => {
+    const angle = -Math.PI / 2 + index * Math.PI * 2 / sides;
     return `${(x + Math.cos(angle) * size / 2).toFixed(1)},${(y + Math.sin(angle) * size / 2).toFixed(1)}`;
   }).join(" ");
   return `<polygon ${attrs} points="${points}"></polygon>`;
@@ -483,7 +604,7 @@ function onPointerDown(event) {
   event.preventDefault();
   const point = localPoint(event, svg);
   if (Math.hypot(point.x, point.y) > 42) {
-    const hit = hitAnyLayer(point);
+    const hit = hitAnyLayer(point, state.stage);
     if (hit) {
       state.selections[hit.stage.id] = hit.item.id;
       const nextUnset = stages.findIndex((stage) => !state.selections[stage.id]);
@@ -536,7 +657,7 @@ function onPointerUp() {
 }
 
 function updateHover(point) {
-  const hit = hitAnyLayer(point);
+  const hit = hitAnyLayer(point, state.stage);
   state.hover = hit ? { stageId: hit.stage.id, id: hit.item.id } : null;
   if (hit) state.stage = hit.stageIndex;
 }
@@ -586,13 +707,29 @@ function onAction(event) {
     render();
     return;
   }
+  if (action === "apply-profile") {
+    const suggestion = profileSuggestion();
+    if (suggestion) {
+      state.selections = { ...suggestion };
+      const profile = currentProfile();
+      if (profile) state.personId = profile.id;
+      state.stage = stages.length - 1;
+      state.drag = null;
+      state.hover = null;
+      render();
+    }
+    return;
+  }
   if (action === "copy") copyText(JSON.stringify(snapshot(), null, 2));
 }
 
 function onField(event) {
   state[event.currentTarget.dataset.field] = event.currentTarget.value;
-  const pre = app.querySelector(".schema pre");
-  if (pre) pre.textContent = JSON.stringify(snapshot(), null, 2);
+  if (event.currentTarget.dataset.field === "profilePerson") render();
+  else {
+    const pre = app.querySelector(".schema pre");
+    if (pre) pre.textContent = JSON.stringify(snapshot(), null, 2);
+  }
 }
 
 async function copyText(text) {
@@ -623,3 +760,20 @@ window.addEventListener("pointermove", onWindowPointerMove);
 window.addEventListener("pointerup", onPointerUp);
 window.addEventListener("pointercancel", onPointerUp);
 render();
+loadProfileContext();
+
+async function loadProfileContext() {
+  try {
+    const response = await fetch("data/profile-context.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    state.profilePeople = Array.isArray(data.people) ? data.people : [];
+    state.profilePerson = state.profilePeople[0]?.id || "";
+    state.profileStatus = state.profilePeople.length ? "loaded" : "empty";
+  } catch {
+    state.profilePeople = [];
+    state.profilePerson = "";
+    state.profileStatus = "unavailable";
+  }
+  render();
+}
