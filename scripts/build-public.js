@@ -34,4 +34,12 @@ fs.writeFileSync(
   ].join("\n"),
 );
 
+fs.writeFileSync(
+  path.join(dist, "_redirects"),
+  [
+    "/demo-one.html https://radial-controls.pages.dev/ 302",
+    "",
+  ].join("\n"),
+);
+
 console.log(`Built public Sorting Hat demo in ${dist}`);
