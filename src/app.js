@@ -156,6 +156,14 @@ const state = {
 const app = document.querySelector("#app");
 let renderQueued = false;
 
+function applyUrlPreset() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("mix") !== "close") return;
+  state.values.mode = { discover: 5, ship: 47, help: 48 };
+  state.values.craft = { engineering: 48, design: 47, strategy: 3, research: 2 };
+  state.values.interaction = { solo: 48, pair: 47, review: 3, route: 2 };
+}
+
 function clamp(value, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
 }
@@ -292,6 +300,45 @@ function dominantOrFallback(controlId) {
   return dominant(controlId) || { ...controlById(controlId).axes[0], value: 0 };
 }
 
+function mixAxes(controlId) {
+  const active = activeAxes(controlId);
+  if (active.length > 0) return active;
+  return [{ ...controlById(controlId).axes[0], value: 0 }];
+}
+
+function nearMixAxes(controlId) {
+  const axes = activeAxes(controlId);
+  if (axes.length <= 1) return axes;
+  const top = axes[0].value;
+  return axes.filter((axis) => axis.value >= Math.max(8, top - 8));
+}
+
+function blendLabel(controlId) {
+  const near = nearMixAxes(controlId);
+  if (near.length === 0) return dominantOrFallback(controlId).short;
+  if (near.length === 1) return near[0].short;
+  if (near.length > 2 && controlId !== "mode") return `${near.length}-${controlById(controlId).grammar} blend`;
+  return `${near.map((axis) => axis.short).join("-")} blend`;
+}
+
+function blendPhrase(controlId) {
+  const near = nearMixAxes(controlId);
+  if (near.length === 0) return dominantOrFallback(controlId).label;
+  if (near.length === 1) return near[0].label;
+  return near.map((axis) => `${axis.label} ${axis.value}`).join(" + ");
+}
+
+function blendPayload(controlId) {
+  return mixAxes(controlId)
+    .filter((axis) => axis.value > 0)
+    .map((axis) => ({
+      key: axis.key,
+      label: axis.label,
+      short: axis.short,
+      value: axis.value,
+    }));
+}
+
 function completion() {
   return Math.round((controls.reduce((total, control) => total + sum(control.id), 0) / 300) * 100);
 }
@@ -302,17 +349,15 @@ function isComplete() {
 
 function semanticName() {
   if (completion() === 0) return "unformed mark";
-  return `${dominantOrFallback("mode").short} ${dominantOrFallback("craft").short} ${dominantOrFallback("interaction").short} line`;
+  const lineLabel = nearMixAxes("interaction").length > 1 ? blendLabel("interaction") : `${blendLabel("interaction")} line`;
+  return `${blendLabel("mode")} ${blendLabel("craft")} ${lineLabel}`;
 }
 
 function summarySentence() {
   if (completion() === 0) {
     return "Pull a point outward. The final mark will resolve into a color, a shape, and a line behavior.";
   }
-  const mode = dominantOrFallback("mode");
-  const craft = dominantOrFallback("craft");
-  const interaction = dominantOrFallback("interaction");
-  return `${mode.label} energy, ${craft.label.toLowerCase()} contribution, ${interaction.label.toLowerCase()} interaction. In shorthand: ${semanticName()}.`;
+  return `${blendPhrase("mode")} color, ${blendPhrase("craft").toLowerCase()} shape, ${blendPhrase("interaction").toLowerCase()} line. In shorthand: ${semanticName()}.`;
 }
 
 function pathTrail() {
@@ -320,11 +365,9 @@ function pathTrail() {
     return [{ type: "start", label: "drag outward", value: 0 }];
   }
   const nodes = [
-    { type: "color", label: dominantOrFallback("mode").short, value: dominantOrFallback("mode").value || 0 },
-    { type: "shape", label: dominantOrFallback("craft").short, value: dominantOrFallback("craft").value || 0 },
-    { type: "line", label: dominantOrFallback("interaction").short, value: dominantOrFallback("interaction").value || 0 },
-    ...activeAxes("mode").slice(1, 3).map((axis) => ({ type: "color tint", label: axis.short, value: axis.value })),
-    ...activeAxes("craft").slice(1, 3).map((axis) => ({ type: "shape echo", label: axis.short, value: axis.value })),
+    ...activeAxes("mode").map((axis, index) => ({ type: index === 0 ? "color" : "color mix", label: axis.short, value: axis.value })),
+    ...activeAxes("craft").map((axis, index) => ({ type: index === 0 ? "shape" : "shape mix", label: axis.short, value: axis.value })),
+    ...activeAxes("interaction").map((axis, index) => ({ type: index === 0 ? "line" : "line mix", label: axis.short, value: axis.value })),
   ];
   return nodes.filter((node) => node.value > 0);
 }
@@ -342,10 +385,13 @@ function snapshot() {
     interaction_line: { ...state.values.interaction },
     semantic_mark: {
       name: semanticName(),
-      color: dominantOrFallback("mode").short,
+      color: blendLabel("mode"),
       color_hex: dominantOrFallback("mode").color,
-      shape: dominantOrFallback("craft").short,
-      line: dominantOrFallback("interaction").short,
+      color_mix: blendPayload("mode"),
+      shape: blendLabel("craft"),
+      shape_mix: blendPayload("craft"),
+      line: blendLabel("interaction"),
+      line_mix: blendPayload("interaction"),
     },
     path_trail: pathTrail(),
     line_length: Number(state.lineLength.toFixed(2)),
@@ -611,9 +657,13 @@ function renderSemanticMark(snap) {
   const mode = dominantOrFallback("mode");
   const craft = dominantOrFallback("craft");
   const interaction = dominantOrFallback("interaction");
-  const secondary = [...activeAxes("mode").slice(1, 3), ...activeAxes("craft").slice(1, 3)];
+  const modeMix = mixAxes("mode");
+  const craftMix = mixAxes("craft");
+  const interactionMix = mixAxes("interaction");
+  const secondary = [...activeAxes("mode").slice(0, 3), ...activeAxes("craft").slice(0, 3)];
   const size = 150 * geometryScale();
   const clipId = "semantic-clip";
+  const colorStops = colorGradientStops(modeMix);
   return `
     <svg class="semantic-svg" viewBox="-230 -170 460 340" role="img" aria-label="${snap.semantic_mark.name}">
       <defs>
@@ -621,6 +671,9 @@ function renderSemanticMark(snap) {
           <feGaussianBlur stdDeviation="5" result="blur"></feGaussianBlur>
           <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
         </filter>
+        <linearGradient id="semantic-color-mix" x1="-70%" y1="-58%" x2="82%" y2="76%">
+          ${colorStops.map((stop) => `<stop offset="${stop.offset}%" stop-color="${stop.color}"></stop>`).join("")}
+        </linearGradient>
         <clipPath id="${clipId}">
           ${shapeMarkup(craft.shape, 0, 0, size, "")}
         </clipPath>
@@ -631,14 +684,69 @@ function renderSemanticMark(snap) {
         ${secondary.map((axis, index) => `
           <circle class="semantic-echo" cx="${-120 + index * 80}" cy="${118 - index * 18}" r="${Math.max(8, axis.value / 2)}" style="--echo:${axis.color}"></circle>
         `).join("")}
-        ${shapeMarkup(craft.shape, 0, 0, size, `class="semantic-mark" style="--mark-color:${mode.color}; --mark-line:${interaction.dash || "none"}"`)}
+        ${renderShapeMixMark(craftMix, size, mode.color)}
         <g class="mark-pattern pattern-${interaction.shape}" clip-path="url(#${clipId})">
-          ${renderMarkPattern(interaction, size)}
+          ${renderMarkPatternMix(interactionMix, size)}
         </g>
         <circle class="semantic-core" cx="0" cy="0" r="7"></circle>
       </g>
     </svg>
   `;
+}
+
+function colorGradientStops(axes) {
+  const active = axes.filter((axis) => axis.value > 0);
+  if (active.length === 0) {
+    return [
+      { offset: 0, color: dominantOrFallback("mode").color },
+      { offset: 100, color: dominantOrFallback("mode").color },
+    ];
+  }
+  const total = active.reduce((sumValue, axis) => sumValue + axis.value, 0);
+  let cursor = 0;
+  return active.flatMap((axis, index) => {
+    const start = cursor;
+    cursor += (axis.value / total) * 100;
+    const end = index === active.length - 1 ? 100 : cursor;
+    return [
+      { offset: Number(start.toFixed(1)), color: axis.color },
+      { offset: Number(end.toFixed(1)), color: axis.color },
+    ];
+  });
+}
+
+function renderShapeMixMark(axes, size, fallbackColor) {
+  const active = axes.filter((axis) => axis.value >= 8);
+  const source = active.length > 0 ? active : [{ ...dominantOrFallback("craft"), value: 0 }];
+  const total = Math.max(1, source.reduce((sumValue, axis) => sumValue + axis.value, 0));
+  return source.map((axis, index) => {
+    const ratio = axis.value / total;
+    const layerSize = size * clamp(0.72 + ratio * 0.62, 0.68, 1.16);
+    const offset = source.length === 1 ? { x: 0, y: 0 } : {
+      x: Math.cos(index * Math.PI * 2 / source.length - Math.PI / 2) * 10 * geometryScale(),
+      y: Math.sin(index * Math.PI * 2 / source.length - Math.PI / 2) * 8 * geometryScale(),
+    };
+    const opacity = clamp(0.26 + ratio * 0.78, 0.26, 0.92);
+    return shapeMarkup(
+      axis.shape,
+      offset.x.toFixed(1),
+      offset.y.toFixed(1),
+      layerSize,
+      `class="semantic-mark semantic-mark-layer" style="--mark-color:${fallbackColor}; fill:url(#semantic-color-mix); opacity:${opacity.toFixed(2)}"`,
+    );
+  }).join("");
+}
+
+function renderMarkPatternMix(axes, size) {
+  const active = axes.filter((axis) => axis.value >= 8);
+  const source = active.length > 0 ? active : [{ ...dominantOrFallback("interaction"), value: 0 }];
+  const total = Math.max(1, source.reduce((sumValue, axis) => sumValue + axis.value, 0));
+  return source.map((axis, index) => {
+    const ratio = axis.value / total;
+    const alpha = clamp(0.2 + ratio * 0.72, 0.2, 0.82);
+    const rotation = source.length === 1 ? 0 : (index - (source.length - 1) / 2) * 8;
+    return `<g class="mark-pattern-axis pattern-${axis.shape}" style="opacity:${alpha.toFixed(2)}" transform="rotate(${rotation})">${renderMarkPattern(axis, size)}</g>`;
+  }).join("");
 }
 
 function renderMarkPattern(interaction, size) {
@@ -922,4 +1030,13 @@ function icon(name) {
   return `<svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[name] || ""}</svg>`;
 }
 
+applyUrlPreset();
 render();
+
+window.__sortingHatThreeControl = {
+  state,
+  controls,
+  snapshot,
+  render,
+  setAxisValue,
+};

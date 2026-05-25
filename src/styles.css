@@ -802,12 +802,27 @@ button:disabled {
   filter: url(#markGlow);
 }
 
+.semantic-mark-layer {
+  mix-blend-mode: screen;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
 .mark-pattern {
   stroke: rgba(23, 20, 21, 0.68);
   fill: rgba(23, 20, 21, 0.68);
   stroke-width: 3.2;
   stroke-linecap: round;
   opacity: 0.62;
+}
+
+.mark-pattern-axis {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.mark-pattern-axis + .mark-pattern-axis {
+  mix-blend-mode: multiply;
 }
 
 .mark-pattern.pattern-dash line {
