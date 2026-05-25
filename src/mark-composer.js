@@ -8,9 +8,9 @@ const stages = [
     question: "How should the cohort read you?",
     help: "Drag from the center to one color. This sets the fill only.",
     options: [
-      { id: "open", label: "Open", value: "blue", color: "#5FA8FF", point: { x: 0, y: -104 }, note: "Direction is still forming." },
-      { id: "shipping", label: "Shipping", value: "green", color: "#6EE7B7", point: { x: 104, y: 52 }, note: "Actively moving and unblocking." },
-      { id: "available", label: "Available", value: "amber", color: "#FFB454", point: { x: -104, y: 52 }, note: "Can review, route, or help." },
+      option("open", "Open", "blue", { x: 0, y: -104 }, { color: "#5FA8FF", note: "Direction is still forming." }),
+      option("shipping", "Shipping", "green", { x: 104, y: 52 }, { color: "#6EE7B7", note: "Actively moving and unblocking." }),
+      option("available", "Available", "amber", { x: -104, y: 52 }, { color: "#FFB454", note: "Can review, route, or help." }),
     ],
   },
   {
@@ -20,10 +20,10 @@ const stages = [
     question: "What kind of contribution should people expect?",
     help: "Drag to a geometry. This sets shape only.",
     options: [
-      { id: "engineering", label: "Engineering", value: "triangle", shape: "triangle", point: { x: 0, y: -112 }, note: "Systems, infra, implementation." },
-      { id: "design", label: "Design", value: "circle", shape: "circle", point: { x: 112, y: 0 }, note: "UX, demos, visual language." },
-      { id: "strategy", label: "Strategy", value: "diamond", shape: "diamond", point: { x: 0, y: 112 }, note: "Positioning and sequencing." },
-      { id: "research", label: "Research", value: "hex", shape: "hex", point: { x: -112, y: 0 }, note: "Assumptions and proof pressure." },
+      option("engineering", "Engineering", "triangle", { x: 0, y: -112 }, { shape: "triangle", note: "Systems, infra, implementation." }),
+      option("design", "Design", "circle", { x: 112, y: 0 }, { shape: "circle", note: "UX, demos, visual language." }),
+      option("strategy", "Strategy", "diamond", { x: 0, y: 112 }, { shape: "diamond", note: "Positioning and sequencing." }),
+      option("research", "Research", "hex", { x: -112, y: 0 }, { shape: "hex", note: "Assumptions and proof pressure." }),
     ],
   },
   {
@@ -33,10 +33,10 @@ const stages = [
     question: "How should people approach you?",
     help: "Drag to a surface treatment. This lives inside the final shape.",
     options: [
-      { id: "direct", label: "Direct", value: "solid", texture: "solid", point: { x: 0, y: -112 }, note: "Direct asks are welcome." },
-      { id: "pair", label: "Pair", value: "hatch", texture: "hatch", point: { x: 112, y: 0 }, note: "Open to paired work." },
-      { id: "review", label: "Review", value: "dots", texture: "dots", point: { x: 0, y: 112 }, note: "Open to critique and checks." },
-      { id: "route", label: "Route", value: "split", texture: "split", point: { x: -112, y: 0 }, note: "Open to intros and context." },
+      option("direct", "Direct", "solid", { x: 0, y: -112 }, { texture: "solid", note: "Direct asks are welcome." }),
+      option("pair", "Pair", "hatch", { x: 112, y: 0 }, { texture: "hatch", note: "Open to paired work." }),
+      option("review", "Review", "dots", { x: 0, y: 112 }, { texture: "dots", note: "Open to critique and checks." }),
+      option("route", "Route", "split", { x: -112, y: 0 }, { texture: "split", note: "Open to intros and context." }),
     ],
   },
 ];
@@ -53,46 +53,17 @@ const state = {
 
 const app = document.querySelector("#app");
 
+function option(id, label, value, point, extra = {}) {
+  return { id, label, value, point, ...extra };
+}
+
 function activeStage() {
   return stages[state.stage];
 }
 
 function selected(stageId) {
   const stage = stages.find((item) => item.id === stageId);
-  return stage?.options.find((option) => option.id === state.selections[stageId]) || null;
-}
-
-function selectedCount() {
-  return stages.filter((stage) => selected(stage.id)).length;
-}
-
-function complete() {
-  return selectedCount() === stages.length;
-}
-
-function slugify(value) {
-  return String(value || "your-handle")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "") || "your-handle";
-}
-
-function sourcePoint() {
-  const previous = stages.slice(0, state.stage).reverse().find((stage) => selected(stage.id));
-  return previous ? selected(previous.id).point : { x: 0, y: 0 };
-}
-
-function localPoint(event, svg) {
-  const rect = svg.getBoundingClientRect();
-  return {
-    x: ((event.clientX - rect.left) / rect.width) * 360 - 180,
-    y: ((event.clientY - rect.top) / rect.height) * 300 - 150,
-  };
-}
-
-function hitOption(point, stage = activeStage()) {
-  return stage.options.find((option) => Math.hypot(point.x - option.point.x, point.y - option.point.y) < 31) || null;
+  return stage?.options.find((item) => item.id === state.selections[stageId]) || null;
 }
 
 function markParts() {
@@ -105,6 +76,22 @@ function markParts() {
     texture,
     name: [color?.value, shape?.value, texture?.value].filter(Boolean).join(" ") || "unformed mark",
   };
+}
+
+function slugify(value) {
+  return String(value || "your-handle").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "your-handle";
+}
+
+function localPoint(event, svg) {
+  const rect = svg.getBoundingClientRect();
+  return {
+    x: ((event.clientX - rect.left) / rect.width) * 360 - 180,
+    y: ((event.clientY - rect.top) / rect.height) * 300 - 150,
+  };
+}
+
+function hitOption(point, stage = activeStage()) {
+  return stage.options.find((item) => Math.hypot(point.x - item.point.x, point.y - item.point.y) < 32) || null;
 }
 
 function snapshot() {
@@ -205,58 +192,51 @@ function renderProperty(stage) {
 }
 
 function renderInstrument(stage) {
-  const source = sourcePoint();
   return `
     <svg class="instrument" viewBox="-180 -150 360 300" role="application" aria-label="${stage.question}">
       <defs>
         <filter id="soft-shadow" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="rgba(0,0,0,0.38)"></feDropShadow>
         </filter>
-        ${patternDefs()}
       </defs>
       <g class="mesh">${meshLines()}</g>
       <circle class="ring" cx="0" cy="0" r="56"></circle>
       <circle class="ring outer" cx="0" cy="0" r="122"></circle>
       ${renderCommittedTrail()}
-      ${state.drag ? `<line class="drag-line" x1="${source.x}" y1="${source.y}" x2="${state.drag.x.toFixed(1)}" y2="${state.drag.y.toFixed(1)}"></line>` : ""}
-      <g class="source" transform="translate(${source.x} ${source.y})">
+      ${state.drag ? `<line class="drag-line" x1="0" y1="0" x2="${state.drag.x.toFixed(1)}" y2="${state.drag.y.toFixed(1)}"></line>` : ""}
+      <g class="source">
         ${renderFinalMark("small")}
         <circle class="source-hit" cx="0" cy="0" r="30"></circle>
         <text x="0" y="4" text-anchor="middle">${state.drag ? "drag" : "hold"}</text>
       </g>
-      ${stage.options.map((option) => renderOption(stage, option)).join("")}
+      ${stage.options.map((item) => renderOption(stage, item)).join("")}
     </svg>
   `;
 }
 
-function renderOption(stage, option) {
-  const active = state.hover?.id === option.id;
-  const committed = selected(stage.id)?.id === option.id;
-  const { x, y } = option.point;
-  const anchor = x > 60 ? "start" : x < -60 ? "end" : "middle";
-  const labelX = x > 60 ? x + 32 : x < -60 ? x - 32 : x;
-  const labelY = y + (Math.abs(x) < 40 ? (y < 0 ? -33 : 40) : 4);
+function renderOption(stage, item) {
+  const active = state.hover?.id === item.id;
+  const committed = selected(stage.id)?.id === item.id;
+  const { x, y } = item.point;
+  const labelY = y < -70 ? y - 24 : y > 70 ? y + 30 : y + 43;
   return `
-    <g class="option" data-option="${option.id}" data-active="${active}" data-committed="${committed}" transform="translate(${x} ${y})">
+    <g class="option" data-option="${item.id}" data-active="${active}" data-committed="${committed}" transform="translate(${x} ${y})">
       <circle class="option-hit" cx="0" cy="0" r="34"></circle>
-      ${optionGraphic(stage, option, 42)}
-      <title>${option.label}: ${option.note}</title>
+      ${optionGraphic(stage, item, 42)}
+      <title>${item.label}: ${item.note}</title>
     </g>
-    <text class="option-label" x="${labelX}" y="${labelY}" text-anchor="${anchor}">${option.label}</text>
+    <text class="option-label" x="${x}" y="${labelY}" text-anchor="middle">${item.label}</text>
   `;
 }
 
-function optionGraphic(stage, option, size) {
-  if (stage.id === "color") return `<circle class="color-node" cx="0" cy="0" r="${size / 2}" style="--node-color:${option.color}"></circle>`;
-  if (stage.id === "shape") return shapeMarkup(option.shape, 0, 0, size, `class="shape-node"`);
-  return `<g class="texture-node texture-${option.texture}">${textureSwatch(option.texture, size)}</g>`;
+function optionGraphic(stage, item, size) {
+  if (stage.id === "color") return `<circle class="color-node" cx="0" cy="0" r="${size / 2}" style="--node-color:${item.color}"></circle>`;
+  if (stage.id === "shape") return shapeMarkup(item.shape, 0, 0, size, `class="shape-node"`);
+  return `<g class="texture-node texture-${item.texture}">${textureSwatch(item.texture, size)}</g>`;
 }
 
 function renderCommittedTrail() {
-  const points = stages.map((stage) => {
-    const choice = selected(stage.id);
-    return choice ? { ...choice.point, stage, choice } : null;
-  }).filter(Boolean);
+  const points = stages.map((stage) => selected(stage.id)?.point).filter(Boolean);
   if (!points.length) return "";
   return `
     <g class="trail">
@@ -278,7 +258,7 @@ function renderFinalMark(size = "large") {
   }
   return `
     <svg class="mark ${size}" viewBox="-60 -60 120 120" aria-label="Profile mark">
-      <defs><clipPath id="${clipId}">${shapeMarkup(shape, 0, 0, markSize, "")}</clipPath>${patternDefs()}</defs>
+      <defs><clipPath id="${clipId}">${shapeMarkup(shape, 0, 0, markSize, "")}</clipPath></defs>
       ${shapeMarkup(shape, 0, 0, markSize, `class="mark-fill" style="--mark-color:${color}"`)}
       ${parts.shape && parts.texture ? `<g class="mark-texture texture-${parts.texture.texture}" clip-path="url(#${clipId})">${textureFill(parts.texture.texture, scale)}</g>` : ""}
       ${parts.shape ? shapeMarkup(shape, 0, 0, markSize, `class="mark-outline"`) : ""}
@@ -287,10 +267,10 @@ function renderFinalMark(size = "large") {
   `;
 }
 
-function swatchFor(stage, option) {
-  if (stage.id === "color") return `<span class="mini color" style="--node-color:${option.color}"></span>`;
-  if (stage.id === "shape") return `<span class="mini shape shape-${option.shape}"></span>`;
-  return `<span class="mini texture texture-${option.texture}"></span>`;
+function swatchFor(stage, item) {
+  if (stage.id === "color") return `<span class="mini color" style="--node-color:${item.color}"></span>`;
+  if (stage.id === "shape") return `<span class="mini shape shape-${item.shape}"></span>`;
+  return `<span class="mini texture texture-${item.texture}"></span>`;
 }
 
 function shapeMarkup(shape, x, y, size, attrs = "") {
@@ -306,7 +286,7 @@ function shapeMarkup(shape, x, y, size, attrs = "") {
 
 function textureSwatch(type, size) {
   const half = size / 2;
-  if (type === "hatch") return `<rect x="${-half}" y="${-half}" width="${size}" height="${size}" rx="6"></rect>${Array.from({ length: 6 }, (_, index) => `<line x1="${-half + index * 10}" y1="${half}" x2="${-half + 22 + index * 10}" y2="${-half}"></line>`).join("")}`;
+  if (type === "hatch") return `<rect x="${-half}" y="${-half}" width="${size}" height="${size}" rx="6"></rect>${[-13, -3, 7, 17].map((x) => `<line x1="${x - 8}" y1="${half - 3}" x2="${x + 8}" y2="${-half + 3}"></line>`).join("")}`;
   if (type === "dots") return `<rect x="${-half}" y="${-half}" width="${size}" height="${size}" rx="6"></rect>${[-9, 0, 9].flatMap((x) => [-9, 0, 9].map((y) => `<circle cx="${x}" cy="${y}" r="2.4"></circle>`)).join("")}`;
   if (type === "split") return `<rect x="${-half}" y="${-half}" width="${size}" height="${size}" rx="6"></rect><path d="M ${-half} ${half} L ${half} ${-half}"></path><path d="M ${-half} 2 L 2 ${-half}"></path>`;
   return `<rect x="${-half}" y="${-half}" width="${size}" height="${size}" rx="6"></rect>`;
@@ -328,10 +308,6 @@ function textureFill(type, scale = 1) {
   }
   if (type === "split") return `<rect class="split-a" x="-60" y="-60" width="60" height="120"></rect><rect class="split-b" x="0" y="-60" width="60" height="120"></rect><path d="M -60 36 C -22 8, 18 -4, 60 -31"></path>`;
   return `<rect x="-60" y="-60" width="120" height="120"></rect>`;
-}
-
-function patternDefs() {
-  return "";
 }
 
 function meshLines() {

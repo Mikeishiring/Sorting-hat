@@ -15,13 +15,10 @@ fs.mkdirSync(dist, { recursive: true });
 copyFile(path.join(root, "index.html"), path.join(dist, "index.html"));
 copyFile(path.join(root, "gesture.html"), path.join(dist, "gesture.html"));
 copyFile(path.join(root, "mark-composer.html"), path.join(dist, "mark-composer.html"));
-copyFile(path.join(root, "demo-one.html"), path.join(dist, "demo-one.html"));
 copyFile(path.join(root, "src", "gesture.css"), path.join(dist, "src", "gesture.css"));
 copyFile(path.join(root, "src", "gesture.js"), path.join(dist, "src", "gesture.js"));
 copyFile(path.join(root, "src", "mark-composer.css"), path.join(dist, "src", "mark-composer.css"));
 copyFile(path.join(root, "src", "mark-composer.js"), path.join(dist, "src", "mark-composer.js"));
-copyFile(path.join(root, "src", "styles.css"), path.join(dist, "src", "styles.css"));
-copyFile(path.join(root, "src", "app.js"), path.join(dist, "src", "app.js"));
 
 fs.writeFileSync(
   path.join(dist, "_headers"),

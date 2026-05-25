@@ -4,7 +4,7 @@ Public demo: https://sorting-hat-ak1.pages.dev/
 
 This repo is only for the Sorting Hat routing-mark prototypes. The root route is the click-drag routing instrument: a participant holds the center, drags through a small set of passes, and produces a compact routing mark that can describe current state, contribution shape, and preferred interaction style.
 
-The mark composer experiment is preserved at `/mark-composer.html`, and the older three-control radial weighting prototype is preserved at `/demo-one.html` for comparison. Onboarding does not live here.
+The mark composer experiment is preserved at `/mark-composer.html` for comparison. Onboarding and the reusable radial-control grammar do not live here.
 
 ## Run
 
@@ -14,7 +14,7 @@ npm start
 
 Then open `http://localhost:4173`.
 
-Root and `http://localhost:4173/gesture.html` load the Sorting Hat routing instrument. Use `http://localhost:4173/mark-composer.html` for the mark composer experiment and `http://localhost:4173/demo-one.html` for the older radial weighting prototype.
+Root and `http://localhost:4173/gesture.html` load the Sorting Hat routing instrument. Use `http://localhost:4173/mark-composer.html` for the mark composer experiment.
 
 ## Verify
 
@@ -35,5 +35,6 @@ This project deploys only to the Cloudflare Pages project `sorting-hat`, which s
 ## Project Boundary
 
 - `Shape-onboarding` is the GitHub and Cloudflare project for hidden-shape onboarding.
-- `Sorting-hat` is the GitHub and Cloudflare project for routing-mark experiments.
-- Do not add onboarding questions or profile PR export code to this repo unless the product direction changes intentionally.
+- `Sorting-hat` is the GitHub and Cloudflare project for cohort routing-mark identity.
+- `Radial-controls` is the GitHub and Cloudflare project for reusable radial control grammar.
+- Do not add onboarding questions, profile PR export code, or raw control grammar demos to this repo unless the product direction changes intentionally.
