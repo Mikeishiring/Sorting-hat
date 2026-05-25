@@ -190,18 +190,31 @@ button:disabled {
   height: 16px;
 }
 
-.demo-grid {
-  max-width: 1460px;
+.mark-workbench {
+  max-width: 1620px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+  gap: 16px;
+  align-items: start;
+}
+
+.controls-column {
+  min-width: 0;
+}
+
+.demo-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(230px, 1fr));
   gap: 16px;
   align-items: start;
 }
 
 .control-card,
 .reveal-panel,
-.readout-panel {
+.readout-panel,
+.live-mark-panel {
   border: 1px solid var(--hairline);
   border-radius: 24px;
   background:
@@ -223,6 +236,33 @@ button:disabled {
 }
 
 .control-card:nth-child(3) {
+}
+
+.live-mark-panel {
+  min-width: 0;
+  padding: 14px;
+}
+
+.live-mark-sticky {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.live-mark-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.live-mark-head h2 {
+  margin: 6px 0 0;
+  font-size: clamp(28px, 3vw, 46px);
+  line-height: 0.92;
+  letter-spacing: 0;
+  text-transform: lowercase;
 }
 
 .control-head {
@@ -710,6 +750,17 @@ button:disabled {
   grid-template-rows: minmax(250px, 1fr) auto;
 }
 
+.live-mark-stage {
+  min-height: 0;
+  border: 1px solid rgba(241, 236, 231, 0.11);
+  border-radius: 20px;
+  background:
+    radial-gradient(340px 240px at 50% 18%, rgba(247, 241, 236, 0.06), transparent 64%),
+    rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  grid-template-rows: minmax(240px, 1fr) auto;
+}
+
 .reveal-stage[data-mode="shape"],
 .reveal-stage[data-mode="text"] {
   grid-template-rows: 1fr;
@@ -720,6 +771,10 @@ button:disabled {
   height: 100%;
   min-height: clamp(270px, 36vh, 440px);
   overflow: visible;
+}
+
+.live-mark-stage .semantic-svg {
+  min-height: clamp(230px, 31vh, 330px);
 }
 
 .semantic-field {
@@ -794,6 +849,31 @@ button:disabled {
   animation: trailIn 460ms var(--ease) both;
 }
 
+.live-mark-stage .path-trail {
+  margin: 0 12px 12px;
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.live-mark-stage .trail-line {
+  gap: 6px;
+}
+
+.live-mark-stage .trail-node {
+  min-height: 28px;
+  border-radius: 10px;
+  padding: 5px 7px;
+}
+
+.live-mark-stage .trail-node span {
+  font-size: 11px;
+}
+
+.live-readout {
+  display: grid;
+  gap: 10px;
+}
+
 .reveal-stage[data-mode="text"] .path-trail {
   align-self: stretch;
   display: grid;
@@ -851,6 +931,10 @@ button:disabled {
   margin: 0;
   font-size: clamp(20px, 2.4vw, 34px);
   line-height: 1.15;
+}
+
+.live-readout .readout-sentence {
+  font-size: clamp(18px, 1.55vw, 25px);
 }
 
 .hover-insight {
@@ -1031,8 +1115,18 @@ button:disabled {
 }
 
 @media (max-width: 1240px) {
-  .demo-grid,
+  .mark-workbench,
   .reveal-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .live-mark-sticky {
+    position: static;
+  }
+}
+
+@media (max-width: 980px) {
+  .demo-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1044,7 +1138,8 @@ button:disabled {
 
   .topbar,
   .control-head,
-  .reveal-head {
+  .reveal-head,
+  .live-mark-head {
     align-items: stretch;
     flex-direction: column;
   }

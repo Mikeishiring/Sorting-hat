@@ -416,51 +416,55 @@ function render() {
       </div>
     </header>
 
-    <section class="demo-grid" aria-label="Three semantic controls">
-      ${controls.map(renderControl).join("")}
-    </section>
+    <section class="mark-workbench" aria-label="Routing mark controls and live preview">
+      <section class="controls-column">
+        <section class="demo-grid" aria-label="Three semantic controls">
+          ${controls.map(renderControl).join("")}
+        </section>
+      </section>
 
-    <section class="reveal-panel ${state.revealed ? "is-revealed" : ""}" aria-label="Semantic mark reveal">
-      <div class="reveal-main">
-        <div class="reveal-head">
-          <div>
-            <div class="micro-label">Semantic mark</div>
-            <h2>${snap.semantic_mark.name}</h2>
+      <aside class="live-mark-panel ${state.revealed ? "is-revealed" : ""}" aria-label="Live routing mark preview">
+        <div class="live-mark-sticky">
+          <div class="live-mark-head">
+            <div>
+              <div class="micro-label">Live mark</div>
+              <h2>${snap.semantic_mark.name}</h2>
+            </div>
+            <div class="completion-badge" data-complete="${isComplete()}">
+              <span>${snap.completion}%</span>
+              <small>${300 - controls.reduce((total, control) => total + sum(control.id), 0)} points left</small>
+            </div>
           </div>
-          <div class="completion-badge" data-complete="${isComplete()}">
-            <span>${snap.completion}%</span>
-            <small>${300 - controls.reduce((total, control) => total + sum(control.id), 0)} points left</small>
+          <div class="reveal-stage live-mark-stage" data-mode="${state.pathMode}">
+            ${state.pathMode !== "text" ? renderSemanticMark(snap) : ""}
+            ${state.pathMode !== "shape" ? renderPathTrail(snap) : ""}
           </div>
+          <div class="live-readout">
+            <div class="micro-label">What changes</div>
+            <p class="readout-sentence">${snap.routing_sentence}</p>
+            ${renderHoverInsight()}
+          </div>
+          <div class="form-grid">
+            <label>
+              <span class="field-label">person id</span>
+              <input class="text-input" value="${escapeAttr(state.personId)}" data-field="personId" />
+            </label>
+            <label>
+              <span class="field-label">visibility</span>
+              <select class="select-input" data-field="visibility">
+                ${["cohort-public", "organizer-only", "public"].map((item) => `<option value="${item}" ${item === state.visibility ? "selected" : ""}>${item}</option>`).join("")}
+              </select>
+            </label>
+          </div>
+          <div class="output-actions">
+            <button class="primary-button" type="button" data-action="copy">${icon("copy")} Copy JSON</button>
+            <button class="ghost-button" type="button" data-action="copy-markdown">${icon("copy")} Copy markdown</button>
+          </div>
+          <details class="data-drawer">
+            <summary>Schema preview</summary>
+            <pre class="json-preview">${escapeHtml(JSON.stringify(snap, null, 2))}</pre>
+          </details>
         </div>
-        <div class="reveal-stage" data-mode="${state.pathMode}">
-          ${state.pathMode !== "text" ? renderSemanticMark(snap) : ""}
-          ${state.pathMode !== "shape" ? renderPathTrail(snap) : ""}
-        </div>
-      </div>
-      <aside class="readout-panel">
-        <div class="micro-label">What the mark means</div>
-        <p class="readout-sentence">${snap.routing_sentence}</p>
-        ${renderHoverInsight()}
-        <div class="form-grid">
-          <label>
-            <span class="field-label">person id</span>
-            <input class="text-input" value="${escapeAttr(state.personId)}" data-field="personId" />
-          </label>
-          <label>
-            <span class="field-label">visibility</span>
-            <select class="select-input" data-field="visibility">
-              ${["cohort-public", "organizer-only", "public"].map((item) => `<option value="${item}" ${item === state.visibility ? "selected" : ""}>${item}</option>`).join("")}
-            </select>
-          </label>
-        </div>
-        <div class="output-actions">
-          <button class="primary-button" type="button" data-action="copy">${icon("copy")} Copy JSON</button>
-          <button class="ghost-button" type="button" data-action="copy-markdown">${icon("copy")} Copy markdown</button>
-        </div>
-        <details class="data-drawer">
-          <summary>Schema preview</summary>
-          <pre class="json-preview">${escapeHtml(JSON.stringify(snap, null, 2))}</pre>
-        </details>
       </aside>
     </section>
     ${state.copied ? `<div class="toast" role="status">${state.copied}</div>` : ""}
