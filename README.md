@@ -35,8 +35,8 @@ This project deploys only to the Cloudflare Pages project `sorting-hat`, which s
 ## Project Boundary
 
 - `Sorting-hat`: cohort routing-mark identity. GitHub: `Mikeishiring/Sorting-hat`. Cloudflare Pages: `sorting-hat` / `https://sorting-hat-ak1.pages.dev/`.
-- `Shape-onboarding`: Onboarding V2, the hidden-shape profile onboarding flow. GitHub: `Mikeishiring/Shape-onboarding`. Cloudflare Pages: `shape-onboarding` / `https://shape-onboarding.pages.dev/`.
-- `Radial-controls`: Onboarding V1, the radial-controls onboarding prototype. GitHub: `Mikeishiring/Radial-controls`. Cloudflare Pages: `radial-controls` / `https://radial-controls.pages.dev/`.
+- `Radial-controls`: canonical onboarding product, formerly Onboarding V1. GitHub: `Mikeishiring/Radial-controls`. Cloudflare Pages: `radial-controls` / `https://radial-controls.pages.dev/`.
+- `Shape-onboarding`: retired Onboarding V2 archive. GitHub: `Mikeishiring/Shape-onboarding`. Cloudflare Pages: `shape-onboarding` / `https://shape-onboarding.pages.dev/`, redirected to Onboarding V1.
 - Do not add onboarding questions, profile PR export code, or raw control grammar demos to this repo unless the product direction changes intentionally.
 
 Related origin note: `radial-dial` is a reusable React marking-menu/radial-dials component, not one of the three deployed products above.
