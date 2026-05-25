@@ -1,0 +1,12 @@
+{
+  "name": "sorting-hat",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone Sorting Hat routing-mark prototypes for cohort preference and contribution signaling.",
+  "scripts": {
+    "build": "node scripts/build-public.js",
+    "start": "node server.js",
+    "verify": "node scripts/verify-cdp.js",
+    "deploy": "npm run build && npx wrangler pages deploy dist --project-name sorting-hat --branch main --commit-hash local-demo --commit-message \"Public Sorting Hat routing demo\" --commit-dirty=true"
+  }
+}
