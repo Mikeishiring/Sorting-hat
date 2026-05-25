@@ -13,8 +13,11 @@ fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });
 
 copyFile(path.join(root, "index.html"), path.join(dist, "index.html"));
+copyFile(path.join(root, "demo-one.html"), path.join(dist, "demo-one.html"));
 copyFile(path.join(root, "gesture.html"), path.join(dist, "gesture.html"));
 copyFile(path.join(root, "mark-composer.html"), path.join(dist, "mark-composer.html"));
+copyFile(path.join(root, "src", "styles.css"), path.join(dist, "src", "styles.css"));
+copyFile(path.join(root, "src", "app.js"), path.join(dist, "src", "app.js"));
 copyFile(path.join(root, "src", "gesture.css"), path.join(dist, "src", "gesture.css"));
 copyFile(path.join(root, "src", "gesture.js"), path.join(dist, "src", "gesture.js"));
 copyFile(path.join(root, "src", "mark-composer.css"), path.join(dist, "src", "mark-composer.css"));
@@ -31,14 +34,6 @@ fs.writeFileSync(
     "",
     "/src/*",
     "  Cache-Control: public, max-age=3600",
-    "",
-  ].join("\n"),
-);
-
-fs.writeFileSync(
-  path.join(dist, "_redirects"),
-  [
-    "/demo-one.html https://radial-controls.pages.dev/ 302",
     "",
   ].join("\n"),
 );

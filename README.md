@@ -2,9 +2,9 @@
 
 Public demo: https://sorting-hat-ak1.pages.dev/
 
-This repo is only for the Sorting Hat routing-mark prototypes. Sorting Hat is a separate project from onboarding. The root route is the layered mark composer; the click-drag routing instrument remains available at `/gesture.html`.
+This repo is only for the Sorting Hat routing-mark prototypes. Sorting Hat is a separate project from onboarding. The root route is the layered mark composer; the click-drag routing instrument remains available at `/gesture.html`, and the restored three-control routing mark is available at `/demo-one.html`.
 
-The mark composer/routing-mark lineage is Sorting Hat `0.5` context. Onboarding and the reusable radial-control grammar do not live here.
+The mark composer/routing-mark lineage is Sorting Hat `0.5` context. The three-control surface is kept here only as Sorting Hat routing-mark design history, not as onboarding.
 
 ## Run
 
@@ -14,7 +14,7 @@ npm start
 
 Then open `http://localhost:4173`.
 
-Root and `http://localhost:4173/mark-composer.html` load the layered Sorting Hat mark composer. Use `http://localhost:4173/gesture.html` for the click-drag routing instrument.
+Root and `http://localhost:4173/mark-composer.html` load the layered Sorting Hat mark composer. Use `http://localhost:4173/gesture.html` for the click-drag routing instrument and `http://localhost:4173/demo-one.html` for the restored three-control routing mark.
 
 ## Verify
 
@@ -37,6 +37,6 @@ This project deploys only to the Cloudflare Pages project `sorting-hat`, which s
 - `Sorting-hat`: cohort routing-mark identity. GitHub: `Mikeishiring/Sorting-hat`. Cloudflare Pages: `sorting-hat` / `https://sorting-hat-ak1.pages.dev/`.
 - `Radial-controls`: canonical onboarding product, formerly Onboarding V1. GitHub: `Mikeishiring/Radial-controls`. Cloudflare Pages: `radial-controls` / `https://radial-controls.pages.dev/`.
 - `Shape-onboarding`: retired Onboarding V2 archive. GitHub: `Mikeishiring/Shape-onboarding`. Cloudflare Pages: `shape-onboarding` / `https://shape-onboarding.pages.dev/`, redirected to Onboarding V1.
-- Do not add onboarding questions, profile PR export code, or raw control grammar demos to this repo unless the product direction changes intentionally.
+- Do not add onboarding questions or profile PR export code to this repo unless the product direction changes intentionally.
 
 Related origin note: `radial-dial` is a reusable React marking-menu/radial-dials component, not one of the three deployed products above.
